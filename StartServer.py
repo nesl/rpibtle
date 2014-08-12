@@ -4,6 +4,11 @@
 import SocketServer
 from threading import Thread
 import sys
+from Beacon import *
+
+# ===== BEACON STRUCTURES =====
+active_beacons = []
+
 
 # ===== CLIENT HANDLER ===== 
 class ClientHandler(SocketServer.BaseRequestHandler):
