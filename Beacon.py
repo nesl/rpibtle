@@ -1,5 +1,5 @@
 
-class Beacon
+class Beacon:
     # variables
     identifier = ''
     xy_pos = (0,0)
