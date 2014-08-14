@@ -8,9 +8,9 @@ class Beacon:
 	xy_pos = (0,0)
 	key_history = []
 	time_history = []
-	key_current = array('B', [0]*31)
+	key_len = 28
+	key_current = array('B', [0]*key_len)
 	key_history_len = 100
-	key_len = 31
 
 	def __init__(self, ident):
 		self.identifier = ident

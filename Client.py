@@ -23,13 +23,13 @@ if len(sys.argv) >= 2:
 
 # ===== VARIABLES =====
 server_address = ('localhost', port)
-delay_nominal = 0.200
+delay_nominal = 0.500
 delay_max = 5.0
 delay = delay_nominal
 tries_before_backoff = 10
 missed_tries = 0
 max_socket_bytes = 4096
-key = array('B', [0]*31)
+key = array('B', [1]*28)
 
 # ===== READ UNIQUE ID =====
 f_id = open('uniqueid','r')
@@ -41,7 +41,8 @@ PKT_REQUESTKEY = array('B', [CMD_REQUESTKEY, unique_id])
 # ===== CONFIGURE BTLE ADV =====
 devnull = open('/dev/null','w')
 def updateBtleAdv(data):
-	prefix = "sudo hcitool -i hci0 cmd 0x08 0x0008 1F "
+	# prefix: 1F for 31 total bytes, 01 for 1 byte of "type", 04 for custom type, 1C for 28 custom bytes
+	prefix = "sudo hcitool -i hci0 cmd 0x08 0x0008 1F 01 04 1C "
 	#config_cmd = prefix + [binascii.hexlify(chunk) for chunk in data]
 	config_cmd = prefix + ''.join('{:02x} '.format(x) for x in data)
 	call([config_cmd], shell=True)
@@ -58,6 +59,7 @@ def configureAllBtleAdv(data):
 def stopAllBtle():
 	call(["sudo hciconfig hci0 noleadv"], shell=True)
 	call(["sudo hciconfig hci0 down"], shell=True)
+	print 'bringing down BTLE adapter'
 
 btle_data = bytearray([0]*31)
 configureAllBtleAdv(btle_data)
