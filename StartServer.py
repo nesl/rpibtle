@@ -10,14 +10,12 @@ import struct
 import binascii
 from array import array
 import time
-
-# ===== TCP/IP COMMANDS =====
-CMD_NULL = chr(0)
-CMD_REQUESTKEY = chr(1)
+# custom constants
+from Constants import *
 
 # ===== BEACON STRUCTURES =====
-all_beacon_ids = [chr(i) for i in range(100,110)]
 active_beacons = {}
+active_users = {}
 
 # ===== CLIENT HANDLER ===== 
 class ClientHandler(SocketServer.BaseRequestHandler):
@@ -31,21 +29,40 @@ class ClientHandler(SocketServer.BaseRequestHandler):
 			data = self.request.recv(1024)
 			if len(data) < 2:
 				break
-			# packets are (command, unique ID)
-			cmd = data[0]
-			uid = data[1]
+			# packets are (client type, command, unique ID)
+			typ = data[0]
+			cmd = data[1]
+			uid = data[2]
 			# handle command appropriately
-			if cmd is CMD_REQUESTKEY:
-				# -- ATOMIC PROCEDURE BEGINS, AQUIRE THREAD LOCK --
-				# make sure this beacon is in the active beacons dict
-				if uid not in active_beacons and uid in all_beacon_ids:
-					active_beacons[uid] = Beacon(uid)
-				beacon = active_beacons[uid]
-				self.request.send( beacon.getCurrentKey() )
-				# -- END ATOMIC PROCEDURE, RELEASE LOCK --
+			handleClientCmd(self, typ,cmd,uid)
 
         print "Client exited from ", self.client_address
         self.request.close()
+
+# ===== HANDLE CLIENT COMMANDS =====
+def handleClientCmd(socket, typ, cmd, uid):
+	# is this a beacon?
+	if typ is CMD_TYPE_BEACON:
+		# make sure this beacon is in the active beacons dict
+		if uid not in active_beacons:
+			active_beacons[uid] = Beacon(uid)
+
+		if cmd is CMD_REQUESTKEY:
+			# -- ATOMIC PROCEDURE BEGINS, AQUIRE THREAD LOCK --
+			beacon = active_beacons[uid]
+			socket.request.send( beacon.getCurrentKey() )
+			# -- END ATOMIC PROCEDURE, RELEASE LOCK --
+	
+	# is this a mobile device?
+	if typ is CMD_TYPE_MOBILE:
+		# make sure this user is in the active user dict
+		if uid not in active_users:
+			active_users[uid] = User(uid)
+
+		if cmd is CMD_REQUESTPATHS:
+			print "mobile device requesting paths"
+
+
 
 
 # ===== THREADED SERVER CLASS =====
